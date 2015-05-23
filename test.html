@@ -1,0 +1,38 @@
+<html>
+<body onload="init()">
+
+<span id="dummyspan"></span>
+
+<script>
+
+
+
+
+function getObj( oName, oFrame, oDoc ) {
+	if( !oDoc ) { if( oFrame ) { oDoc = oFrame.document; } else { oDoc = window.document; } }
+	if( oDoc[oName] ) { return oDoc[oName]; } if( oDoc.all && oDoc.all[oName] ) { return oDoc.all[oName]; }
+	if( oDoc.getElementById && oDoc.getElementById(oName) ) { return oDoc.getElementById(oName); }
+	for( var x = 0; x < oDoc.forms.length; x++ ) { if( oDoc.forms[x][oName] ) { return oDoc.forms[x][oName]; } }
+	for( var x = 0; x < oDoc.anchors.length; x++ ) { if( oDoc.anchors[x].name == oName ) { return oDoc.anchors[x]; } }
+	for( var x = 0; document.layers && x < oDoc.layers.length; x++ ) {
+		var theOb = MWJ_findObj( oName, null, oDoc.layers[x].document ); if( theOb ) { return theOb; } }
+	if( !oFrame && window[oName] ) { return window[oName]; } if( oFrame && oFrame[oName] ) { return oFrame[oName]; }
+	for( var x = 0; oFrame && oFrame.frames && x < oFrame.frames.length; x++ ) {
+		var theOb = MWJ_findObj( oName, oFrame.frames[x], oFrame.frames[x].document ); if( theOb ) { return theOb; } }
+	return null;
+}
+
+
+function init(){
+  DHTMLSound("gunfight2.wav");
+ }
+
+
+function DHTMLSound(surl) {
+  document.getElementById("dummyspan").innerHTML=
+    "<embed src='"+surl+"' hidden=true autostart=true loop=false>";
+}
+</script>
+
+</body>
+</html>

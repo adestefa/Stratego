@@ -1,0 +1,548 @@
+<html>
+   <head>
+      <title></title>
+      <!--  .map {border: 2px double black;background-image: url(imgs/glossymap.jpg);}   -->
+      <style>
+     
+       .map {background-image: url(imgs/glossymap.jpg);}  
+
+      TD    { border: 1px solid white; padding: 1em; }
+
+      </style>
+
+
+
+
+<script>
+   
+ // Stratego 
+ // Created by Anthony De Stefano 4/2003
+ 
+ 
+ 
+ 
+ // setup common color name attributes
+
+
+var SS; // sound system popup
+
+var blue = "blue";  // blue team color	
+var red = "red";     // red team color
+
+var TURN = red;   // who's turn is it?
+
+var TroopToMove = "-";  // which soldier to move?
+
+var Battle = false;   // in battle, blue must turn over
+
+var _BlueArmy = new Array();  // blue team soldirs
+var _RedArmy = new Array();  // red team soldierrs
+
+var SOLDIERWIDTH=37;
+var SOLDIERHEIGHT=50;
+
+var MAPCELLWIDTH=37;
+var MAPCELLHEIGHT =50;
+var MAPCOLS = 15;  
+var MAPROWS = 9;
+
+
+var Rank = new Array(11);
+Rank[0]=""
+Rank[1]="Marshal";
+Rank[2]="General";
+Rank[3]="Colonel";
+Rank[4]="Major";
+Rank[5]="Captain";
+Rank[6]="Lieutenant";
+Rank[7]="Sergeant";
+Rank[8]="Miner";
+Rank[9]="Scout";
+Rank[10]="Spy";
+
+
+var BattleSounds = new Array(17);
+BattleSounds[0]="attack.wav";
+BattleSounds[1]="gunshots3.wav";
+BattleSounds[2]="Machine_Gun.wav";
+BattleSounds[3]="shotgun2.wav";
+BattleSounds[4]="Gun_Shot2.wav";
+BattleSounds[5]="sword2.wav";
+BattleSounds[6]="implosion.wav";
+BattleSounds[7]="Machine_Gun3.wav";
+BattleSounds[8]="punches.wav";
+BattleSounds[9]="cannon.wav";
+BattleSounds[10]="amissile.wav";
+BattleSounds[11]="battle3.wav";
+BattleSounds[12]="Gun_Shot.wav";
+BattleSounds[13]="Machine_Gun2.wav";
+BattleSounds[14]="punches.wav";
+BattleSounds[15]="scream.wav";
+BattleSounds[16]="sword3.wav";   
+ </script>
+ </head>
+ <body >
+  
+   <!--
+  1 marshall
+  1 general
+  2 colenlenl 
+  3 major 
+  4 captian
+  4 leiutenant
+  4 sargeant
+  5 miner
+  8 scout
+  1 spy
+  6 bombs
+  1 flag
+  -->
+  
+  
+
+  
+  
+<span id="Speaker">HI</span>
+  
+  
+ <script>
+
+ function getRankName(rank){
+  return Rank[rank];
+}
+  
+function getObj( oName, oFrame, oDoc ) {
+	if( !oDoc ) { if( oFrame ) { oDoc = oFrame.document; } else { oDoc = window.document; } }
+	if( oDoc[oName] ) { return oDoc[oName]; } if( oDoc.all && oDoc.all[oName] ) { return oDoc.all[oName]; }
+	if( oDoc.getElementById && oDoc.getElementById(oName) ) { return oDoc.getElementById(oName); }
+	for( var x = 0; x < oDoc.forms.length; x++ ) { if( oDoc.forms[x][oName] ) { return oDoc.forms[x][oName]; } }
+	for( var x = 0; x < oDoc.anchors.length; x++ ) { if( oDoc.anchors[x].name == oName ) { return oDoc.anchors[x]; } }
+	for( var x = 0; document.layers && x < oDoc.layers.length; x++ ) {
+		var theOb = MWJ_findObj( oName, null, oDoc.layers[x].document ); if( theOb ) { return theOb; } }
+	if( !oFrame && window[oName] ) { return window[oName]; } if( oFrame && oFrame[oName] ) { return oFrame[oName]; }
+	for( var x = 0; oFrame && oFrame.frames && x < oFrame.frames.length; x++ ) {
+		var theOb = MWJ_findObj( oName, oFrame.frames[x], oFrame.frames[x].document ); if( theOb ) { return theOb; } }
+	return null;
+}
+
+ // SOLDIER OBJECT CONSTRUCTOR
+ function Soldier(rank,team,index){
+   
+   // soldier properties
+   this.name = getRankName(rank);
+   this.rank = rank;
+   this.index = index;
+   this.col;
+   this.row;
+   this.team = team;
+   this.face;
+   if(team == blue){
+        this.face = "imgs/Blank_blue.jpg";
+   }else{
+         this.face = "imgs/"+this.name+"_"+team+".jpg";
+   }
+   
+   // soldier behaviors
+   this.show = details;
+   this.deploy = setTroop;
+   this.battle = fight;
+   this.c = combat;
+   this.die=death;
+   this.turnOver = turnOver;
+}
+
+// SOLDIER OBJECT METHODS
+// _________________________________________________________________________________ 
+
+
+// SOLDIER DETAIL REPORT
+// -----------------------------------------------------------
+function details(){
+ var s = "Name:"+this.name+"\n";
+ s += "Team:"+this.team+"\n";
+ s += "Rank:"+this.rank+"\n";
+ s += "Index:"+this.index+"\n";
+ s += "Coor:"+this.col+"_"+this.row+"\n";
+ alert(s);
+ }
+function turnOver(){
+  this.face = "imgs/"+this.name+"_"+this.team+".jpg";
+}
+
+
+// BATTLE ENEMY SOLDIER
+// -------------------------------------------------------------
+function fight(enemy){
+
+  // play random battle sound
+  playSound(BattleSounds[getRandomNumber(BattleSounds.length)]);
+ 
+ if(enemy.team == blue){ 
+ enemy.turnOver();
+ enemy.deploy(enemy.col,enemy.row);
+ }
+ 
+ setTimeout(this.c(enemy),100000); 
+
+}
+
+
+function combat(enemy){
+
+
+if(this.name == "Marshal" && enemy.name == "Spy"){
+      alert("You Loose! A Spy beats a Marshal");
+      this.die();
+      //playSound("boohiss.wav");
+      setBlank(enemy.col,enemy.row);
+      enemy.deploy(this.col,this.row);
+      
+  
+  }else if(this.name == "Spy" &&  enemy.name == "Marshal" ){
+     // alert("You win! A Spy beats a Marshal");
+      enemy.die();
+      //playSound("cheer_8k.wav");
+      setBlank(this.col,this.row);
+      this.deploy(enemy.col,enemy.row);
+  
+  }else if(this.name == "Spy" &&  enemy.name != "Marshal" ){
+     // alert("You loose! Everything beats a Spy");
+      this.die();
+     // playSound("boo3.wav");
+      setBlank(enemy.col,enemy.row);
+      enemy.deploy(this.col,this.row);
+  
+  }else if(this.rank < enemy.rank){
+    // alert("You win!\n A "+this.team+ " "+ this.name + " beats a "+ otherTeam(this.team)+"  "+ enemy.name);
+      enemy.die();
+    //  playSound("applause8.wav");
+      setBlank(this.col,this.row);
+      this.deploy(enemy.col,enemy.row);
+  
+  }else if(this.rank > enemy.rank){
+     // alert("You Loose!\n A "+otherTeam(this.team)+" "+ enemy.name + " beats a "+this.team+"  "+ this.name);
+       this.die();
+      setBlank(enemy.col,enemy.row);
+      enemy.deploy(this.col,this.row);
+  
+  }else if (this.rank == enemy.rank) {
+    // alert("You both loose!\n A "+otherTeam(this.team)+" "+ enemy.name + " equals a  "+this.team+"  "+ this.name);
+      this.die();
+      enemy.die();
+      setBlank(this.col,this.row);
+      setBlank(enemy.col,enemy.row);
+     // playSound("boos2.wav");
+
+  }
+   nextTurn();
+}
+
+// DEPLOY SOLDIER TO POSITION ON MAP
+function setTroop(col,row){
+ var A   = getObj("a"+col+"_"+row);
+ var IMG = getObj("i"+col+"_"+row);
+ this.row = row;
+ this.col = col;
+  //alert("Deploying:"+this.team+" "+this.name+" TargetCell:"+targetCell);
+      if(this ==  TroopToMove){
+         b = 4;
+         }else{
+         b = 0;
+        } 
+   var s;
+    if(this.team == blue){
+  
+     A.title="["+this.rank+"]"+this.name;
+     A.href="javascript:selectSoldier(_BlueArmy["+this.index+"])";
+     IMG.src=this.face;
+     IMG.alt=this.name;
+     IMG.width=SOLDIERWIDTH;
+     IMG.height=SOLDIERHEIGHT;
+     IMG.border=b;
+ 
+  }else{
+  
+     A.title="["+this.rank+"]"+this.name;
+     A.href="javascript:selectSoldier(_RedArmy["+this.index+"])";
+     IMG.src=this.face;
+     IMG.alt=this.name;
+     IMG.width=SOLDIERWIDTH;
+     IMG.height=SOLDIERHEIGHT;
+     IMG.border=b;
+    }
+} 
+ 
+
+function death(){
+ //playSound("scream.wav");
+ setBlank(this.col,this.row);
+ TroopToMove="-";
+}
+
+
+ 
+ 
+
+
+// _________________________________________________________________________________   
+
+    
+
+ // SOLDIER TYPE CONSTUCTORS
+ // _________________________________________________________________________________   
+ // marshal object constructor
+ function Marshal(team,index){
+  var s = new Soldier(1,team,index);
+  return s;
+ }
+ // General object constructor
+ function General(team,index){
+  var s = new Soldier(2,team,index);
+  return s;
+ }
+// Colonel object constructor
+ function Colonel(team,index){
+ var  s = new Soldier(3,team,index);
+  return s;
+ }
+// Major object constructor
+ function Major(team,index){
+  var s = new Soldier(4,team,index);
+  return s;
+ }
+// Captain object constructor
+ function Captain(team,index){
+  var s = new Soldier(5,team,index);
+  return s;
+ }
+ // Lieutenant object constructor
+ function Lieutenant(team,index){
+  var s = new Soldier(6,team,index);
+  return s;
+ }
+// Sergeant object constructor
+ function Sergeant(team,index){
+ var  s = new Soldier(7,team,index);
+  return s;
+ }
+// Miner object constructor
+ function Miner(team,index){
+  var s = new Soldier(8,team,index);
+  return s;
+ }
+// Scout object constructor
+ function Scout(team,index){
+  var s = new Soldier(9,team,index);
+  return s;
+ }
+// Spy object constructor
+ function Spy(team,index){
+  var s = new Soldier("S",team,index);
+  return s;
+ }
+ // _________________________________________________________________________________   
+ 
+
+
+function createMap(c,r){
+  var map = '<form name="map"><input type="button" value="New Game" onclick="initi()" /> <b>Turn:</b><input type="text" name="turn" size="6" /> </form><table class="map" border="0" width="400" height="400" cellspacing="0" cellpadding="0">';
+   for(var rows=1;rows<r;rows++){
+     map+='<tr>';  
+      for(var cols=1;cols<c;cols++){
+          map+='<td width="'+MAPCELLWIDTH+'" height="'+MAPCELLHEIGHT+'""><a id="a'+cols+'_'+rows+'" name="a'+cols+'_'+rows+'" href="javascript:move('+cols+','+rows+')"><img id="i'+cols+'_'+rows+'" name="i'+cols+'_'+rows+'" src="imgs/spacer.gif" width="'+MAPCELLWIDTH+'" height="'+MAPCELLHEIGHT+'" border="0" /></a></td>';
+     }   
+     map+='</tr>';
+   }
+  map+="</table>";
+ // alert(map);
+ document.write(map);
+}
+
+
+function CreateStandardArmy(color){
+  var _Army = new Array();
+   _Army[0] = "";
+   _Army[1] = new Marshal(color,1);
+   _Army[2] = new General(color,2);
+   _Army[3] = new Colonel(color,3);
+   _Army[4] = new Major(color,4);
+   _Army[5] = new Captain(color,5);
+   _Army[6] = new Lieutenant(color,6);
+   _Army[7] = new Sergeant(color,7);
+   _Army[8] = new Miner(color,8);
+   _Army[9] = new Scout(color,9);
+   _Army[10] = new Spy(color,10);
+  return _Army;
+}
+
+
+function CreateRandomArmy(color){
+  var _Army = new Array();
+   _Army[0] = "";
+  for(i=1;i<11;i++){
+    _Army[i]= eval("new "+Rank[getRandomNumber(10)]+"("+color+","+i+")");; 
+  } 
+  return _Army;
+}
+
+
+
+
+function sendArmyToBoard(color,row){
+ if(color == "blue"){ 
+  for(i=1;i<_BlueArmy.length;i++){
+   _BlueArmy[i].deploy(i,row);
+   }
+ }else if(color == "red"){
+  for(i=1;i<_RedArmy.length;i++){
+   _RedArmy[i].deploy(i,row);
+   }
+ }
+}
+
+
+function initi(){
+    playSound("start.wav");
+   _BlueArmy = CreateRandomArmy(blue);
+   _RedArmy  = CreateRandomArmy(red);
+   sendArmyToBoard(blue,1);
+   sendArmyToBoard(red,8); 
+   document.map.turn.value=TURN;
+}
+
+
+
+
+function getRandomNumber(max) {
+  var rndnum = max * Math.random()
+  rndnum = Math.ceil (rndnum)
+  return rndnum
+}
+
+
+
+function nextTurn(){
+   if(TURN == red){
+       TURN = blue;
+     }else{
+        TURN = red;
+   }
+   document.map.turn.value=TURN;
+   obj = TroopToMove;
+   TroopToMove = "-";
+   // turn last object hightlight off
+   obj.deploy(obj.col,obj.row);
+}
+
+function otherTeam(team){
+  if(team == blue){
+   return red;
+   }else{
+   return blue;
+  }
+ }
+
+
+
+ 
+ 
+
+
+
+
+ function setBlank(c,r){
+ var A   = getObj("a"+c+"_"+r);
+ var IMG = getObj("i"+c+"_"+r);
+  
+ A.alt="";
+ A.href="javascript:move('"+c+"',"+"'"+r+"')";
+ IMG.src="imgs/spacer.gif";
+ IMG.alt="";
+ IMG.width="50"
+ IMG.height="60";
+ IMG.border="0";
+ }
+
+ 
+  function move(c,r){
+ if(TroopToMove != "-"){
+  var target = c+","+r;
+ // no nadar (no swimming) 1/4/2006 3:45PM
+ // keep soldiers out of the water cells. Anthony III's first update
+ if((target == "3,5") && (target == "4,5")  &&  (target == "7,5")  &&  (target == "8,5")){
+   playSound("error2.wav");
+ }else{
+   playSound("Gun_Cock.wav");
+   var current_col = TroopToMove.col;
+   var current_row = TroopToMove.row;
+   setBlank(current_col,current_row);
+   TroopToMove.deploy(c,r);
+   nextTurn();
+ }
+}
+}
+ 
+ function selectSoldier(obj){
+  //obj.show();    
+   
+ // select solder if none are selected
+ if(TroopToMove == "-"){
+    playSound("Gun_Reload.wav");
+   TroopToMove = obj;
+   // redeploy with highlight
+   obj.deploy(obj.col,obj.row);
+  
+ 
+ 
+ // user clicked enemy soldier
+ } else if ((TURN == TroopToMove.team) && (obj.team == otherTeam(TroopToMove.team))) {
+   
+    
+        
+      // enemy is in next row   
+      if((obj.row == (TroopToMove.row + 1) && (obj.col == TroopToMove.col)) ||  (obj.row == (TroopToMove.row - 1) && (obj.col == TroopToMove.col))){
+         TroopToMove.battle(obj);
+      }
+    
+    
+      if((obj.col == (TroopToMove.col + 1) && (obj.row == TroopToMove.row)) ||  (obj.col == (TroopToMove.col - 1) && (obj.row == TroopToMove.row))){
+         TroopToMove.battle(obj);
+      }
+            
+      
+  // highlight soldier
+  }else{
+    var last = TroopToMove;
+   TroopToMove = obj;
+   // turn last object hightlight off
+   last.deploy(last.col,last.row);
+   obj.deploy(obj.col,obj.row);
+  }
+ }
+ 
+ 
+
+function playSound(sound) {
+  var speaker = getObj("Speaker");
+  speaker.innerHTML='<embed src="sound/'+sound+'" hidden="true" autostart="true" loop="false">';
+}
+
+
+ 
+ function pause(){
+  var z = 1;
+  for(var i=0;i<10000000;i++){
+    i=i
+   }
+   return true;
+ }
+
+
+ createMap(MAPCOLS,MAPROWS);
+ </script>
+ 
+ 
+ 
+ 
+   </body>
+</html>
